@@ -4,7 +4,7 @@ const app = express();
 
 app.use(express.json());
 app.use(cors());
-app.listen( process.env.PORT ||  3000);
+// app.listen( process.env.PORT ||  3000);
 
 
 app.get('/', function(req, res){
@@ -46,6 +46,8 @@ app.post(endpoint, (req, res) => {
     notes.push(note);
     res.send("1");
 
+    // Stream
+    notify(notes.length, note["title"], note["description"]);
 });
 
 app.put(`${endpoint}/:id`, (req, res) =>{
@@ -58,12 +60,33 @@ app.put(`${endpoint}/:id`, (req, res) =>{
 
     notes[id] = note;
     res.send("1");
-
+    notify(id, note["title"], note["description"]);
 });
 
 app.delete(`${endpoint}/:id`, (req, res) => {
     const id = req.params.id;
     delete notes[id];
     res.send("1");
-
+    notify(id, "", "")
 });
+
+
+/*
+  Stream
+*/
+let SERVER_INFORMATION = 'server_information';
+
+var server = require('http').createServer(app);
+var io = require('socket.io')(server);
+
+server.listen( process.env.PORT ||  3000);
+
+function notify(noteId, title, description){
+    io.sockets.emit(SERVER_INFORMATION,
+		    {
+			"noteId" : noteId,
+			"title" : title,
+			"description": description
+		    }
+		   );
+}
